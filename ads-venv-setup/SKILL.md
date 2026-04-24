@@ -2,89 +2,97 @@
 name: ads-venv-setup
 description: >-
   Set up a Python virtual environment that exactly mirrors the Keysight ADS 2025
-  bundled Python environment (Python 3.12 + ADS-specific wheels), using the
-  offline Python interpreter and wheelhouse copied from the ADS installation.
-  Use when the user asks to initialize the ADS Python environment, create a
-  virtual environment for this project, set up ads_venv, or run the
-  install_ads_venv.ps1 script.
+  bundled Python environment (Python 3.12 + ADS-specific wheels). Use when the
+  user wants to initialize the ADS Python environment, create ads_venv, set up
+  the project virtual environment, or provides a path to their ADS 2025 Python
+  folder. The agent should ask for the ADS Python folder path and then run the
+  setup script automatically.
 ---
 
 # ADS 2025 Python Virtual Environment Setup
 
-Creates `ads_venv` from the bundled ADS 2025 Python 3.12 interpreter and
-offline wheel packages — no internet or ADS installation required.
+## Agent workflow
 
-## Prerequisites
+When this skill is triggered, follow these steps in order:
 
-| Item | Location |
-|------|----------|
-| ADS Python 3.12 interpreter | `ads_offline_packages/python/python.exe` |
-| Offline wheel files | `ads_offline_packages/python/wheelhouse/*.whl` |
-| Setup script | `ads_offline_packages/install_ads_venv.ps1` |
+### Step 1 — Collect the ADS Python folder path
 
-The `ads_offline_packages/python/` folder is copied from:
-`C:\Program Files\Keysight\ADS2025_Update2\tools\python`
+Ask the user:
 
-## Setup Steps
+> "请提供你的 ADS 2025 Python 文件夹路径。
+> 常见路径示例：
+> - 离线拷贝（已在项目中）：`ads_offline_packages\python`（直接按回车使用默认值）
+> - ADS 安装目录：`C:\Program Files\Keysight\ADS2025_Update2\tools\python`
+> - 自定义拷贝位置：如 `D:\MyADS\python`"
 
-### 1. Run the setup script from the project root
+If the user already provided the path in their message, skip this step.
 
-Open PowerShell in `d:\Users\Documents\GitHub\ADS_Python_SOA_Check` and run:
+### Step 2 — Validate the path contains required files
 
-```powershell
-.\ads_offline_packages\install_ads_venv.ps1
-```
+Before running the script, verify:
+1. `<provided_path>\python.exe` exists
+2. `<provided_path>\wheelhouse\` folder exists
 
-The script performs these actions automatically:
-1. Verifies `ads_offline_packages/python/python.exe` exists
-2. Creates `ads_venv/` using the ADS Python interpreter (`python -m venv ads_venv`)
-3. Iterates every `.whl` in `ads_offline_packages/python/wheelhouse/` and installs
-   each one via `python -m pip install <wheel> --find-links . --no-index`
-   — wheels that are incompatible with the platform are silently skipped
-4. Prints the full list of installed packages on completion
+If either is missing, tell the user and stop.
 
-### 2. Activate the environment
+### Step 3 — Run the setup script
+
+Execute from the **project root** (`d:\Users\Documents\GitHub\ADS_Python_SOA_Check`):
 
 ```powershell
-.\ads_venv\Scripts\activate
+# Default (offline copy already in project)
+.\.agents\skills\ads-venv-setup\scripts\setup_ads_venv.ps1
+
+# Custom path provided by user
+.\.agents\skills\ads-venv-setup\scripts\setup_ads_venv.ps1 -ADSPythonPath "<user_path>"
+
+# Custom venv name (optional)
+.\.agents\skills\ads-venv-setup\scripts\setup_ads_venv.ps1 -ADSPythonPath "<user_path>" -VenvName "ads_venv"
 ```
 
-### 3. Verify
+Use `Shell` tool to run the command and capture output.
 
-```powershell
-python --version          # should print Python 3.12.x
-python -m pip list        # should show keysight.ads.* packages
-```
+### Step 4 — Report results
 
-## What Gets Installed
+After the script finishes, show the user:
+- How many wheels were installed / skipped
+- The activation command: `.\ads_venv\Scripts\activate`
+- Suggest running `python -m pip list` to verify `keysight.ads.*` packages are present
 
-- **Python 3.12** (same build as ADS 2025 internal interpreter)
-- All `.whl` files in `wheelhouse/` — includes `keysight-ads-*` packages and
-  their dependencies (numpy, pandas, etc.) pre-built for the ADS runtime
+---
+
+## Script reference
+
+**Script**: `scripts/setup_ads_venv.ps1`
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `-ADSPythonPath` | `ads_offline_packages\python` | Path to ADS Python folder (must contain `python.exe` + `wheelhouse\`) |
+| `-VenvName` | `ads_venv` | Name of the virtual environment to create |
+
+What the script does internally:
+1. Resolves the path and validates `python.exe` + `wheelhouse\` exist
+2. Runs `python -m venv <VenvName>` using the ADS interpreter
+3. Installs every `.whl` from `wheelhouse\` via `pip install --no-index --find-links`; incompatible wheels are silently skipped
+4. Prints installed package list and summary
+
+---
 
 ## Troubleshooting
 
-| Problem | Cause | Fix |
-|---------|-------|-----|
-| `ERROR: ADS Python not found` | `ads_offline_packages/python/` folder missing | Re-copy from ADS install or a colleague's machine |
-| Package shows `[SKIPPED]` | Wheel platform/Python version mismatch | Expected — those wheels target a different OS/arch |
-| `python.exe` blocked by antivirus | Corporate policy | Whitelist `ads_offline_packages/python/` folder |
-| Activation fails | PowerShell execution policy | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
+| Problem | Fix |
+|---------|-----|
+| `python.exe not found` | Check the path; copy the folder from ADS installation |
+| `wheelhouse\ not found` | The source folder is incomplete — re-copy from ADS |
+| Activation fails | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
+| Antivirus blocks `python.exe` | Whitelist the ADS Python folder |
+| `[skipped]` wheels | Expected — platform/version mismatch, not an error |
 
-## Key Variables in the Script
+---
 
-```powershell
-$ADS_PATH   = 'ads_offline_packages\python'   # source interpreter + wheelhouse
-$VENV_NAME  = 'ads_venv'                       # output venv name (project root)
-```
-
-To rename the venv, edit `$VENV_NAME` before running.
-
-## Re-running / Updating
-
-To rebuild from scratch, delete `ads_venv/` first:
+## Re-running from scratch
 
 ```powershell
 Remove-Item -Recurse -Force ads_venv
-.\ads_offline_packages\install_ads_venv.ps1
+.\.agents\skills\ads-venv-setup\scripts\setup_ads_venv.ps1 -ADSPythonPath "<path>"
 ```
