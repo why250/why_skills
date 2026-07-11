@@ -1,0 +1,45 @@
+{
+  "schema_version": "sim-metrics/v1",
+  "design": "BJT_IV_Gm_PowerCalcs",
+  "description": "Closed-loop metric specs for BJT IV / Gm netlist CLI demo. Thresholds are illustrative.",
+  "vac_amplitude_v": 0.001,
+  "csv_globs": {
+    "dc": "*_Sweep1.DC1.DC.csv",
+    "ac": "*_Sweep1.Sweep2.AC1.AC.csv"
+  },
+  "metrics": [
+    {
+      "id": "ic_max",
+      "description": "Maximum DC collector current IC.i over the IV sweep",
+      "source": "dc",
+      "op": "max",
+      "column": "IC.i",
+      "min": 0.002,
+      "priority": "must"
+    },
+    {
+      "id": "gm_max",
+      "description": "Maximum AC transconductance |Iac|/Vac (Vac from schematic AC source)",
+      "source": "ac",
+      "op": "gm_max",
+      "re_column": "IC.i_re",
+      "im_column": "IC.i_im",
+      "min": 0.05,
+      "priority": "must"
+    }
+  ],
+  "allowed_params": ["VCE_Start", "VCE_Stop", "VCE_Step"],
+  "param_defaults": {
+    "VCE_Start": 0,
+    "VCE_Stop": 5,
+    "VCE_Step": 0.1
+  },
+  "param_steps": {
+    "VCE_Stop": 1.0
+  },
+  "notes": [
+    "DDS formulas (markers, Class-A load line) are NOT evaluated here.",
+    "Encode stable KPI definitions in this file; let the LLM only choose allowed_params.",
+    "Tighten or loosen min/max to match your checklist."
+  ]
+}

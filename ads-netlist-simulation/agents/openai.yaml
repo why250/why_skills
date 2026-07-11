@@ -1,0 +1,4 @@
+interface:
+  display_name: "ADS Netlist Simulation"
+  short_description: "Generate and optimize ADS netlists from the command line"
+  default_prompt: "Use $ads-netlist-simulation to generate a netlist from this ADS design and run a command-line simulation."

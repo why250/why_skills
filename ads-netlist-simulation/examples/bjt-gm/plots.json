@@ -1,0 +1,18 @@
+{
+  "csv_globs": {
+    "dc": "*_Sweep1.DC1.DC.csv",
+    "ac": "*_Sweep1.Sweep2.AC1.AC.csv"
+  },
+  "plots": [
+    {
+      "source": "dc",
+      "x": "VCE",
+      "group_by": "IBB",
+      "series": [{"y": "IC.i", "label": "Ic"}],
+      "title": "BJT output characteristics",
+      "x_label": "VCE (V)",
+      "y_label": "IC (A)",
+      "output": "bjt_iv.png"
+    }
+  ]
+}

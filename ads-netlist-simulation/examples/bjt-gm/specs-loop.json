@@ -1,0 +1,27 @@
+{
+  "schema_version": "sim-metrics/v1",
+  "design": "BJT_IV_Gm_PowerCalcs",
+  "description": "Closed-loop example: adjust only IBB_Stop until maximum collector current is at most 0.018 A.",
+  "vac_amplitude_v": 0.001,
+  "csv_globs": {
+    "dc": "*_Sweep1.DC1.DC.csv",
+    "ac": "*_Sweep1.Sweep2.AC1.AC.csv"
+  },
+  "metrics": [
+    {
+      "id": "ic_max",
+      "description": "Maximum DC collector current over the IV sweep",
+      "source": "dc",
+      "op": "max",
+      "column": "IC.i",
+      "max": 0.018,
+      "priority": "must"
+    }
+  ],
+  "allowed_params": ["IBB_Stop"],
+  "param_defaults": {"IBB_Stop": 0.0002},
+  "param_steps": {"IBB_Stop": 0.00002},
+  "param_units": {"IBB_Stop": "uA"},
+  "param_floors": {"IBB_Stop": 0.00002},
+  "param_ceilings": {"IBB_Stop": 0.0002}
+}

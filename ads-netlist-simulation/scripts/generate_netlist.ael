@@ -1,0 +1,78 @@
+/* Generate an ADS simulator netlist from a schematic design.
+ *
+ * Inputs are passed as system environment variables by generate_netlist.ps1.
+ * Uses APIs available since ADS 2011 for ADS 2022/2025 compatibility.
+ */
+#voc(SimCmd)
+
+defun codex_write_netlist_status(message)
+{
+    decl statusPath = getsysenv("CODEX_ADS_NETLIST_STATUS");
+    decl statusFile = fopen(statusPath, "W");
+    fputs(statusFile, message);
+    fclose(statusFile);
+}
+
+defun codex_generate_netlist_from_environment()
+{
+    decl existingPids = getsysenv("CODEX_ADS_EXISTING_PIDS");
+    decl requireIsolation = getsysenv("CODEX_ADS_REQUIRE_ISOLATION");
+    decl workspacePath = getsysenv("CODEX_ADS_WORKSPACE");
+    decl libraryName = getsysenv("CODEX_ADS_LIBRARY");
+    decl cellName = getsysenv("CODEX_ADS_CELL");
+    decl viewName = getsysenv("CODEX_ADS_VIEW");
+    decl outputPath = getsysenv("CODEX_ADS_NETLIST_OUTPUT");
+    decl designName = strcat(libraryName, ":", cellName, ":", viewName);
+    decl context, netlistH, ok, currentPidToken;
+
+    /* Protect an already-running interactive ADS before touching its workspace.
+     * getpid() was introduced in ADS 2022 Update 1. On an older build, allow
+     * normal startup only when no pre-existing ADS session needs protection. */
+    if (is_function_defined("getpid"))
+    {
+        currentPidToken = strcat("|", getpid(), "|");
+        if (index(existingPids, currentPidToken) >= 0)
+        {
+            codex_write_netlist_status("ERROR_REUSED_SESSION");
+            return FALSE;
+        }
+    }
+    else if (strcmp(requireIsolation, "1") == 0)
+    {
+        codex_write_netlist_status("ERROR_PID_UNAVAILABLE");
+        return FALSE;
+    }
+
+    if (!de_open_workspace(workspacePath))
+    {
+        codex_write_netlist_status("ERROR_WORKSPACE");
+        de_exit();
+        return FALSE;
+    }
+
+    if (!de_design_exists(libraryName, cellName, viewName))
+    {
+        codex_write_netlist_status("ERROR_DESIGN");
+        de_close_workspace_without_prompting();
+        de_exit();
+        return FALSE;
+    }
+
+    /* ADS 2011-2022 API. Deprecated but retained after ADS 2023 Update 2. */
+    context = de_get_design_context_from_name(designName);
+    netlistH = de_netlist_create(context);
+    ok = de_netlist_save(netlistH, outputPath);
+
+    if (ok)
+        codex_write_netlist_status("OK");
+    else
+        codex_write_netlist_status("ERROR_SAVE");
+
+    de_close_workspace_without_prompting();
+    de_exit();
+    return ok;
+}
+
+codex_generate_netlist_from_environment();
+
+#voc()
