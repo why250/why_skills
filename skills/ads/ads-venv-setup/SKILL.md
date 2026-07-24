@@ -41,13 +41,13 @@ Execute from the **project root** (`d:\Users\Documents\GitHub\ADS_Python_SOA_Che
 
 ```powershell
 # Default (offline copy already in project)
-.\.agents\skills\ads-venv-setup\scripts\setup_ads_venv.ps1
+.\skills\ads\ads-venv-setup\scripts\setup_ads_venv.ps1
 
 # Custom path provided by user
-.\.agents\skills\ads-venv-setup\scripts\setup_ads_venv.ps1 -ADSPythonPath "<user_path>"
+.\skills\ads\ads-venv-setup\scripts\setup_ads_venv.ps1 -ADSPythonPath "<user_path>"
 
 # Custom venv name (optional)
-.\.agents\skills\ads-venv-setup\scripts\setup_ads_venv.ps1 -ADSPythonPath "<user_path>" -VenvName "ads_venv"
+.\skills\ads\ads-venv-setup\scripts\setup_ads_venv.ps1 -ADSPythonPath "<user_path>" -VenvName "ads_venv"
 ```
 
 Use `Shell` tool to run the command and capture output.
@@ -94,5 +94,5 @@ What the script does internally:
 
 ```powershell
 Remove-Item -Recurse -Force ads_venv
-.\.agents\skills\ads-venv-setup\scripts\setup_ads_venv.ps1 -ADSPythonPath "<path>"
+.\skills\ads\ads-venv-setup\scripts\setup_ads_venv.ps1 -ADSPythonPath "<path>"
 ```

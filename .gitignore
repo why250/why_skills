@@ -28,6 +28,15 @@ desktop.ini
 chroma_db/
 index/
 
+# Local or restricted EDA assets
+*.lic
+*.psf
+*.ds
+*.raw
+psf/
+PDK/
+pdks/
+
 # Logs
 *.log
 
