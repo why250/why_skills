@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pytest Windows Sandbox Temp"
+  short_description: "Avoid pytest temp ACL failures on Windows."
+  default_prompt: "Use $pytest-windows-sandbox-temp to run and diagnose pytest in this Windows sandbox."
