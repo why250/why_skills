@@ -1,6 +1,6 @@
 ---
 name: configure-ads2025-linux
-description: Configure Keysight ADS2025 on Linux after manual installation via SETUP.SH. Covers FlexNet license server setup, PathWave patcher, environment variables, LSB compatibility fix, systemd auto-start, and PATH configuration. Use when the user has installed ADS2025 and needs to complete post-install configuration, or when ADS reports "ADS License not available", or when lmgrd/agileesofd needs to be set up.
+description: Configure Keysight ADS2025 on Linux after manual installation via SETUP.SH. Covers FlexNet license server setup, PathWave patcher, environment variables, LSB compatibility fix, SELinux labels for systemd lmgrd, systemd auto-start, and PATH configuration. Use when the user has installed ADS2025 and needs to complete post-install configuration, or when ADS reports "ADS License not available", or when lmgrd/agileesofd needs to be set up, or when ads-lmgrd.service fails with status=203/EXEC.
 ---
 
 # ADS2025 Linux Post-Install Configuration
@@ -140,9 +140,26 @@ $LICDIR/lmgrd \
 
 > **Why `LD_LIBRARY_PATH=/usr/lib64:$LICDIR`?** lmgrd requires its own directory (`$LICDIR`) in the library path to locate its dependencies. Without `$LICDIR`, lmgrd starts but immediately fails with "Failed to open the TCP port number in the license".
 
+**SELinux labels (required on RHEL/Rocky when ADS lives under `/home`):**
+
+On SELinux **Enforcing** systems, files extracted/installed under `/home` are often `unlabeled_t`. systemd cannot execute them → `ads-lmgrd.service` fails with `status=203/EXEC` even though the binary runs fine when started manually by a user. Apply a persistent `bin_t` context **before** enabling the unit:
+
+```bash
+LICDIR=$INSTALL_DIR/Licensing/2024.06/linux_x86_64/bin
+# Persist across restorecon / reboot
+semanage fcontext -a -t bin_t "$LICDIR(/.*)?" 2>/dev/null || \
+  semanage fcontext -m -t bin_t "$LICDIR(/.*)?"
+restorecon -Rv "$LICDIR"
+# Confirm key binaries
+ls -Z $LICDIR/lmgrd $LICDIR/agileesofd $LICDIR/lmutil
+# Expected: ... system_u:object_r:bin_t:s0 ... (or unconfined_u:...:bin_t:s0)
+```
+
+Without this step, the service may appear enabled but crash-loops after reboot; ADS then shows `ADS License not available` because nothing is listening on `27009@localhost`.
+
 **Auto-start via systemd (recommended):**
 
-Create `/etc/systemd/system/ads-lmgrd.service`:
+Create `/etc/systemd/system/ads-lmgrd.service` (prefer single-line `ExecStart`/`ExecStop`):
 
 ```ini
 [Unit]
@@ -151,12 +168,9 @@ After=network.target
 
 [Service]
 Type=forking
-Environment="LD_LIBRARY_PATH=/usr/lib64:<INSTALL_DIR>/Licensing/2024.06/linux_x86_64/bin"
-ExecStart=<INSTALL_DIR>/Licensing/2024.06/linux_x86_64/bin/lmgrd \
-  -c <INSTALL_DIR>/licenses/agileesofd.lic \
-  -l /var/log/ads_lmgrd.log
-ExecStop=<INSTALL_DIR>/Licensing/2024.06/linux_x86_64/bin/lmutil \
-  lmdown -c <INSTALL_DIR>/licenses/agileesofd.lic -q
+Environment=LD_LIBRARY_PATH=/usr/lib64:<INSTALL_DIR>/Licensing/2024.06/linux_x86_64/bin
+ExecStart=<INSTALL_DIR>/Licensing/2024.06/linux_x86_64/bin/lmgrd -c <INSTALL_DIR>/licenses/agileesofd.lic -l /var/log/ads_lmgrd.log
+ExecStop=<INSTALL_DIR>/Licensing/2024.06/linux_x86_64/bin/lmutil lmdown -c <INSTALL_DIR>/licenses/agileesofd.lic -q
 Restart=on-failure
 RestartSec=5
 
@@ -178,7 +192,10 @@ LD_LIBRARY_PATH=/usr/lib64:$LICDIR \
   $LICDIR/lmutil lmstat -a -c 27009@localhost | grep -E "UP|agileesofd"
 # Expected: xunipc: license server UP (MASTER) v11.19.2
 #           agileesofd: UP v11.19.2
+systemctl is-active ads-lmgrd   # expected: active
 ```
+
+**One-shot repair script** (repo root): `fix-ads-lmgrd.sh` — stops crash-loop + user lmgrd, applies SELinux `bin_t`, rewrites the unit, restarts, and checks `lmstat`. Run as root: `sudo bash fix-ads-lmgrd.sh`.
 
 ---
 
@@ -193,6 +210,46 @@ ads &
 
 ADS requires a graphical desktop session (X11 or Wayland with XWayland). Run from a terminal inside the desktop, not from an SSH session without `DISPLAY`.
 
+`lsb_release: not found` during startup is a harmless warning on minimal RHEL images; it is **not** the license failure.
+
+---
+
+## Diagnosis — "It worked before, now ADS License not available"
+
+When ADS previously launched and suddenly fails with `ADS License not available`, check the **license server first** (not the patcher):
+
+```bash
+# 1. Is anything serving licenses?
+ps aux | grep -E 'lmgrd|agileesofd' | grep -v grep
+LICDIR=$HPEESOF_DIR/Licensing/2024.06/linux_x86_64/bin
+LD_LIBRARY_PATH=/usr/lib64:$LICDIR $LICDIR/lmutil lmstat -c 27009@localhost | head -20
+
+# 2. systemd unit health
+systemctl status ads-lmgrd --no-pager
+# Crash-loop with status=203/EXEC → SELinux unlabeled_t (see Step 4)
+# inactive/dead after reboot → start/repair unit
+
+# 3. Confirm env still points at local server
+echo "ADS_LICENSE_FILE=$ADS_LICENSE_FILE"   # expect 27009@localhost
+grep '^SERVER' $HPEESOF_DIR/licenses/agileesofd.lic
+```
+
+| Symptom | Likely cause | Action |
+|---|---|---|
+| No `lmgrd` process; `lmstat` cannot connect | Server never started / died | `systemctl start ads-lmgrd` or run `fix-ads-lmgrd.sh` |
+| Unit enabled but `203/EXEC` | SELinux blocks exec of `unlabeled_t` under `/home` | Step 4 SELinux `bin_t` + restart unit |
+| Unit fails; log "Cannot open ... ads_lmgrd.log" | Non-root start writing `/var/log` | Start via systemd as root, or use `$HOME/.ads_lmgrd.log` for manual start |
+| Server UP but ADS still no license | Client `libagsl` unpatched | Step 3: patch `lib/linux_x86_64` |
+
+Temporary workaround **without root** (until systemd is fixed):
+
+```bash
+LICDIR=$HPEESOF_DIR/Licensing/2024.06/linux_x86_64/bin
+LD_LIBRARY_PATH=/usr/lib64:$LICDIR $LICDIR/lmgrd \
+  -c $HPEESOF_DIR/licenses/agileesofd.lic \
+  -l $HOME/.ads_lmgrd.log
+```
+
 ---
 
 ## Known Issues Quick Reference
@@ -202,6 +259,9 @@ ADS requires a graphical desktop session (X11 or Wayland with XWayland). Run fro
 | `libstdc++.so.6: file too short` | 0-byte placeholder in Licensing/bin | Step 1: copy real libstdc++ |
 | `lmgrd: No such file or directory` | Missing LSB interpreter | Step 1: create ld-lsb symlink |
 | `Failed to open the TCP port` | lmgrd already running, or missing `$LICDIR` in LD_LIBRARY_PATH | Kill old lmgrd; ensure `$LICDIR` in LD_LIBRARY_PATH |
-| `ADS License not available` | `lib/linux_x86_64/libagsl.so` not patched | Step 3: patch all three directories |
+| `ADS License not available` (server down) | lmgrd not running after reboot / crash | Diagnosis section; start `ads-lmgrd` |
+| `ADS License not available` (server UP) | `lib/linux_x86_64/libagsl.so` not patched | Step 3: patch all three directories |
+| `ads-lmgrd` `status=203/EXEC` | SELinux `unlabeled_t` on binaries under `/home` | Step 4: `semanage fcontext` + `restorecon` to `bin_t` |
 | `ads: command not found` | PATH not loaded (root shell) | `source /etc/profile.d/ads2025.sh` |
 | systemctl fails with `OPENSSL_3.4.0 not found` | ADS libcrypto conflicts with systemd | Use `env -i` wrapper for systemctl commands |
+| `lsb_release: not found` | Optional LSB tools missing | Ignore; not a license blocker |
