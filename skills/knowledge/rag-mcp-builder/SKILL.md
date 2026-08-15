@@ -174,7 +174,7 @@ Incremental update only re-embeds new/changed files (detected by mtime). BM25 is
 ## Memory notes
 
 - Peak RAM during full build: ~500-800 MB (ONNX + ChromaDB + BM25)
-- ChromaDB upsert batch size: 100 (keeps memory flat)
+- Start ChromaDB upserts at 16 documents for large Windows corpora; raise only after measuring peak RAM. A batch size of 100 can exhaust memory even when each individual document is small.
 - ONNX model (~45 MB) is cached at `%USERPROFILE%\.cache\chroma\onnx_models\` after first run
 - Do NOT use `sentence-transformers` (requires PyTorch, 2-3 GB)
 

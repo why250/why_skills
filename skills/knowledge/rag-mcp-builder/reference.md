@@ -242,6 +242,18 @@ python -c "from chromadb.utils.embedding_functions import DefaultEmbeddingFuncti
 ### Server cold start is slow
 The ONNX model loads lazily on the first `search_docs` call, not at startup. Cold start should be < 1 second. If startup is slow, check for large `chroma_db/` that needs migration.
 
+### Large corpus build fails with `too many SQL variables`
+Do not call `collection.get()` without pagination on a large collection. Read it in bounded `limit`/`offset` pages (for example 500 records), then rebuild derived structures such as BM25 from the collected pages.
+
+### Large corpus build raises `numpy._core._exceptions._ArrayMemoryError`
+The embedding/upsert batch is too large for the available RAM. Start with batches of 16 documents on Windows, call `gc.collect()` between batches if memory remains constrained, and increase only after measuring a successful full build. The `100`-document default is not universally safe.
+
+### Atomic index replacement fails on Windows
+Chroma can keep SQLite files open after indexing. Before renaming a staging index directory into place, release the collection, close the persistent client, drop their references, and collect garbage. Build in a sibling staging directory and replace the live index only after all manifest and integrity checks succeed; on failure, retain the previous live index.
+
+### Cold startup unexpectedly downloads a model or rebuilds an index
+Keep server startup limited to configuration and index-file readiness checks. Instantiate `DefaultEmbeddingFunction()` only in the retrieval path, and require explicit `build`/`index` CLI commands for all index creation or repair.
+
 ### Results are irrelevant
 1. Check `list_categories()` — are chunks being indexed?
 2. Try without `category=` filter (searches all)
