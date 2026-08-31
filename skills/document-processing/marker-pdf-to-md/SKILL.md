@@ -18,17 +18,15 @@ Do not default to local LLM/Ollama enhancements unless the user explicitly asks 
 
 ## Default Workflow
 1. Confirm the PDF path and whether the user wants a whole document, page range, or known section pages.
-2. Check the active Python interpreter before suggesting installs:
-   - `python -c "import sys; print(sys.executable)"`
-   - `python -m pip show marker-pdf`
-3. Validate core imports in the same interpreter:
-   - `python -c "import marker, pydantic, pdftext, surya, cv2"`
-4. Use the Python API recipe from [reference.md](reference.md):
+2. Resolve Python via config file (see [reference.md](reference.md) → **Environment & Config**):
+   - Read `.agent/config/marker-pdf-env.json`
+   - Validate; if missing or stale → detect and re-save config automatically
+3. Use the Python API recipe from [reference.md](reference.md):
    - `ConfigParser(...)` for `output_format`, `output_dir`, and optional `page_range`
    - `PdfConverter(...)` for conversion
    - `save_output(...)` for final files
-5. Save outputs under `reference/output/<task-name>/` unless the user gives a different destination.
-6. Return the markdown path first. Then mention `_meta.json` and any extracted images if relevant.
+4. Save outputs under `reference/output/<task-name>/` unless the user gives a different destination.
+5. Return the markdown path first. Then mention `_meta.json` and any extracted images if relevant.
 
 ## Output Convention
 - Use a stable task-specific directory under `reference/output/`.
@@ -43,8 +41,7 @@ Do not default to local LLM/Ollama enhancements unless the user explicitly asks 
 - If the user asks for Ollama, only use models with `vision` capability.
 
 ## Troubleshooting
-- If imports fail, the most common issue is using a different `python` than the one where packages were installed.
-- If `pydantic`, `pdftext`, `surya`, or `cv2` is missing, install into the current interpreter, not a different Python on the machine.
+- If config file imports fail, the most common issue is a moved/removed Python environment. Delete `.agent/config/marker-pdf-env.json` and re-run — it will auto-detect and re-save.
 - On Windows with Python 3.14, `marker`'s `Pillow<11` dependency can be awkward. Prefer a validated environment first if one already exists.
 - Treat `_meta.json` as metadata/debug output, not the main deliverable.
 

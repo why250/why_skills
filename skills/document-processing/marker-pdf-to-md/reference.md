@@ -1,16 +1,92 @@
 # Reference
 
-## Environment Checks
+## Environment & Config
 
-Run these checks in the interpreter that will execute the conversion:
+Before running any conversion, resolve the Python interpreter via config file:
+
+1. Read `.agent/config/marker-pdf-env.json` to get the known-good Python path.
+2. Validate with `{python} -c "import marker, pydantic, pdftext, surya, cv2"`.
+3. If config is missing or validation fails, detect and re-save.
+
+### Bash snippet (detect + save)
 
 ```bash
-python -c "import sys; print(sys.executable)"
-python -m pip show marker-pdf
-python -c "import marker, pydantic, pdftext, surya, cv2"
+# Read existing config (if any)
+CONFIG_FILE=".agent/config/marker-pdf-env.json"
+PYTHON=""
+
+if [ -f "$CONFIG_FILE" ]; then
+    PYTHON=$(python3 -c "import json; print(json.load(open('$CONFIG_FILE'))['python'])" 2>/dev/null)
+fi
+
+# Detect if config not found or validation failed
+if [ -z "$PYTHON" ] || ! $PYTHON -c "import marker, pydantic, pdftext, surya, cv2" 2>/dev/null; then
+    echo "Config missing or invalid — detecting environment..."
+    PYTHON=$(python3 -c "import sys; print(sys.executable)")
+    IMPORT_OK=$($PYTHON -c "import marker, pydantic, pdftext, surya, cv2; print('OK')" 2>&1)
+    if [ "$IMPORT_OK" != "OK" ]; then
+        echo "ERROR: marker-pdf not available in $PYTHON" >&2
+        echo "Install with: $PYTHON -m pip install marker-pdf" >&2
+        exit 1
+    fi
+    VERSION=$($PYTHON -m pip show marker-pdf 2>/dev/null | grep Version | awk '{print $2}')
+    mkdir -p "$(dirname "$CONFIG_FILE")"
+    cat > "$CONFIG_FILE" <<EOF
+{
+  "python": "${PYTHON}",
+  "marker_version": "${VERSION}",
+  "verified_imports": ["marker", "pydantic", "pdftext", "surya", "cv2"],
+  "verified_on": "$(date +%Y-%m-%d)"
+}
+EOF
+    echo "Config saved to $CONFIG_FILE"
+fi
+
+echo "Using: $PYTHON"
 ```
 
-If those commands use different environments than expected, fix the interpreter mismatch before debugging `marker` itself.
+### Python snippet (load config in conversion scripts)
+
+```python
+import json, os, subprocess, sys
+
+CONFIG_FILE = ".agent/config/marker-pdf-env.json"
+
+def resolve_python():
+    """Return path to known-good Python, detecting + saving if needed."""
+    # Try existing config
+    if os.path.isfile(CONFIG_FILE):
+        with open(CONFIG_FILE) as f:
+            cfg = json.load(f)
+        py = cfg["python"]
+        try:
+            subprocess.run([py, "-c", "import marker, pydantic, pdftext, surya, cv2"],
+                           check=True, capture_output=True)
+            return py
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            pass
+
+    # Detect from current interpreter
+    py = sys.executable
+    subprocess.run([py, "-c", "import marker, pydantic, pdftext, surya, cv2"],
+                   check=True)
+    version = subprocess.run([py, "-m", "pip", "show", "marker-pdf"],
+                             capture_output=True, text=True)
+    ver_line = [l for l in version.stdout.splitlines() if l.startswith("Version:")]
+    ver = ver_line[0].split()[-1] if ver_line else "unknown"
+
+    os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
+    with open(CONFIG_FILE, "w") as f:
+        json.dump({
+            "python": py,
+            "marker_version": ver,
+            "verified_imports": ["marker", "pydantic", "pdftext", "surya", "cv2"],
+            "verified_on": __import__("datetime").date.today().isoformat(),
+        }, f, indent=2)
+    return py
+
+PYTHON = resolve_python()
+```
 
 ## In-Memory Conversion
 
