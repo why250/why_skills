@@ -13,6 +13,8 @@ description: >-
 
 本 skill 可安装在宿主支持的用户级 skills 目录，供不同项目调用。安装位置只存放 skill 自身；沉淀产物的位置由当前任务决定，不以安装目录为项目根，也不把各项目知识累积到本 skill 内。
 
+当活动项目就是 `why_skills` 时，先读取 `docs/skill-lifecycle.md` 与 `docs/conventions.md`；新建 Skill 前先查重，优先更新已有权威来源。
+
 ## 1. 确定项目和作用域
 
 先做有限的只读探查，得到足以路由的信息：
