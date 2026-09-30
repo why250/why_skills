@@ -1,0 +1,5 @@
+interface:
+  display_name: "Ask Why"
+  short_description: "Route work to the right skill"
+policy:
+  allow_implicit_invocation: false
