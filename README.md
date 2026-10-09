@@ -41,6 +41,7 @@ why_skills/
 | EDA 集成 | [eda-gui-async-bridge](./skills/eda-integration/eda-gui-async-bridge/SKILL.md) | 将 CLI/MCP 与 ADS、Virtuoso 等 EDA GUI 的原生启动脚本进行异步通信 |
 | 工程实践 | [research](./skills/engineering-practice/research/SKILL.md) | 基于一手资料研究技术问题，并将带引用的结论沉淀到仓库 |
 | 工程实践 | [diagnosing-bugs](./skills/engineering-practice/diagnosing-bugs/SKILL.md) | 为脚本、MCP、环境或仿真问题建立可复现的诊断闭环 |
+| 工程实践 | [linux-vm-ssh-setup](./skills/engineering-practice/linux-vm-ssh-setup/SKILL.md) | 新 Linux 虚拟机网络、sudo、sshd、Windows SSH 密钥免密登录与 VS Code 连接配置 |
 | 工程实践 | [pytest-windows-sandbox-temp](./skills/pytest-windows-sandbox-temp/SKILL.md) | 处理受控 Windows sandbox 中 pytest 临时目录 ACL / WinError 5 问题；当前为 legacy 顶层路径 |
 | 知识检索 | [rag-mcp-builder](./skills/knowledge/rag-mcp-builder/SKILL.md) | 从 HTML、文本、代码等知识库构建本地 ChromaDB + BM25 RAG MCP 服务 |
 | 文档处理 | [marker-pdf-to-md](./skills/document-processing/marker-pdf-to-md/SKILL.md) | 使用 Marker 将 PDF 转为 Markdown，并保留后续核验路径 |
