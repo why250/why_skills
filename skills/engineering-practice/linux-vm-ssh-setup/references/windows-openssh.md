@@ -71,3 +71,41 @@ $LASTEXITCODE
 - `Permission denied (publickey)`：查 `ssh -vvv IC_Analog`、`ssh -G IC_Analog`、实际提供的密钥、`authorized_keys` 内容与权限、`sshd_config` 的 `PubkeyAuthentication` / `AuthorizedKeysFile`，以及 SELinux 文件上下文（必要时由管理员 `restorecon -RFv ~/.ssh`）。
 - `REMOTE HOST IDENTIFICATION HAS CHANGED`：先独立核对新指纹及是否更换 VM/MAC/IP，确认确实是可信新主机后才清理相应 known_hosts 条目。
 - VS Code Remote-SSH 失败而终端 SSH 成功：检查 VS Code Remote-SSH 日志、远端 shell 启动脚本、系统兼容性与所需组件；不等同于密钥登录失败。
+
+## 5. 实战案例：IC261（多台 VMware 虚拟机）
+
+以下数据来自一次已完成的接入，仅用于示范，**不要在别人的环境中原样套用 IP/用户**：
+
+| 项目 | 已确认值 |
+|---|---|
+| Linux 用户 / 主机名 | `userone` / `xunipc` |
+| VMware 网卡 / DHCP IP | `ens160` / `192.168.116.131/24` |
+| Windows SSH 别名 | `IC261` |
+| 结果 | 用户确认 `ssh IC261` 已实现免密登录；VS Code Remote-SSH 未在该次对话中单独验收 |
+
+原有 `IC_Server`、`IC_Server_root`、`IC_Server_rtl2gds`、`IC_Server_Rocky` 保留不动；只新增：
+
+```sshconfig
+# VMware Linux VM: xunipc
+Host IC261
+    HostName 192.168.116.131
+    User userone
+    Port 22
+    ForwardX11 yes
+    ServerAliveInterval 60
+    ServerAliveCountMax 3
+```
+
+**SSH Config 避坑：** 不要将 `# 注释` 直接跟在 `HostName` 或 `User` 的值后面；把注释放在独立行，防止参数解析与预期不一致。修改后验证：
+
+```powershell
+ssh -G IC261 | Select-String '^(hostname|user|port|identityfile) '
+ssh -o BatchMode=yes -o PreferredAuthentications=publickey IC261 "whoami; hostname"
+$LASTEXITCODE
+```
+
+期望：`ssh -G` 展示 `192.168.116.131` 与 `userone`；连接命令返回 `userone` 和 `xunipc`，退出码为 `0`。这比仅观察到“终端能登录”更明确地验证了公钥认证。若没有测试输出，只报告用户已确认的免密状态，不虚构执行记录。
+
+本次还出现 `userone is not in the sudoers file`；用户持有 root 密码，故应从 **VM 控制台** 使用 `su -`，再执行 `usermod -aG wheel userone`，完整重新登录后以 `sudo whoami` 验证，详见 [network-and-privileges.md](network-and-privileges.md)。不因拿到 root 密码而启用 root SSH 远程登录。
+
+`ip addr` 的 `dynamic` 标志及 DHCP 租期表示该 IP **不是静态保留保证**。如果后续 SSH 连接失效，优先重新确认 VM 当前 IP、VMnet8 地址分配和 `ssh -G IC261` 解析结果，不要马上覆盖 `known_hosts` 或重生成密钥。
