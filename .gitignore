@@ -41,3 +41,6 @@ pdks/
 *.log
 
 example/
+
+# Personal prompt drafts
+prompt/
