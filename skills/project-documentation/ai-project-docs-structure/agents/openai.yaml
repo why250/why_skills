@@ -1,0 +1,5 @@
+interface:
+  display_name: "AI Project Docs Structure"
+  short_description: "Restructure docs into README / AGENTS / conventions layers"
+policy:
+  allow_implicit_invocation: false

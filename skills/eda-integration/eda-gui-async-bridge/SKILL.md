@@ -145,7 +145,7 @@ When working with Cadence Virtuoso, the tool's scripting language is called **SK
 
 ## Reference Implementation and Tool Comparison
 
-See [reference.md](reference.md) for:
+See [reference.md](references/reference.md) for:
 - Complete ADS `boot.ael` implementation with `on_error()` error capture
 - Cadence Virtuoso `.cdsinit` equivalent mapping
 - Known startup hook locations for common EDA tools

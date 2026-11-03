@@ -1,6 +1,6 @@
 ---
 name: marker-pdf-to-md
-description: Use when converting a PDF or PDF page range to Markdown with marker, extracting a PDF section by known pages, or troubleshooting marker PDF-to-Markdown work in this repository.
+description: Convert PDFs to Markdown with marker (deep-learning layout + OCR). Use for scanned/image-only PDFs, OCR, formulas or complex multi-column layouts, when extracted images and _meta.json are needed, when the user names marker, or when troubleshooting marker. For ordinary digital PDFs, prefer the faster pdf-to-markdown (pymupdf4llm).
 ---
 
 # Marker PDF to Markdown
@@ -9,7 +9,7 @@ description: Use when converting a PDF or PDF page range to Markdown with marker
 Use `marker`'s Python API by default. Prefer `PdfConverter` with `ConfigParser` for page ranges and `save_output()` for writing the markdown, `_meta.json`, and extracted images together.
 
 ## When to Use
-- The user asks to convert a PDF to Markdown.
+- The PDF is scanned/image-only, needs OCR, or has formulas or complex layouts that pymupdf4llm handles poorly.
 - The user asks for a single page, page range, or section from a PDF.
 - The user mentions `marker`, `pdf -> md`, OCR, or extracted PDF images/metadata.
 - The user needs help diagnosing why `marker` conversion fails in this repo.
@@ -18,10 +18,10 @@ Do not default to local LLM/Ollama enhancements unless the user explicitly asks 
 
 ## Default Workflow
 1. Confirm the PDF path and whether the user wants a whole document, page range, or known section pages.
-2. Resolve Python via config file (see [reference.md](reference.md) → **Environment & Config**):
+2. Resolve Python via config file (see [reference.md](references/reference.md) → **Environment & Config**):
    - Read `.agent/config/marker-pdf-env.json`
    - Validate; if missing or stale → detect and re-save config automatically
-3. Use the Python API recipe from [reference.md](reference.md):
+3. Use the Python API recipe from [reference.md](references/reference.md):
    - `ConfigParser(...)` for `output_format`, `output_dir`, and optional `page_range`
    - `PdfConverter(...)` for conversion
    - `save_output(...)` for final files
@@ -46,5 +46,5 @@ Do not default to local LLM/Ollama enhancements unless the user explicitly asks 
 - Treat `_meta.json` as metadata/debug output, not the main deliverable.
 
 ## Additional Resources
-- API recipes and environment checks: [reference.md](reference.md)
-- Example requests and expected handling: [examples.md](examples.md)
+- API recipes and environment checks: [reference.md](references/reference.md)
+- Example requests and expected handling: [examples.md](references/examples.md)

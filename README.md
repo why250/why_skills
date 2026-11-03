@@ -42,10 +42,10 @@ why_skills/
 | 工程实践 | [research](./skills/engineering-practice/research/SKILL.md) | 基于一手资料研究技术问题，并将带引用的结论沉淀到仓库 |
 | 工程实践 | [diagnosing-bugs](./skills/engineering-practice/diagnosing-bugs/SKILL.md) | 为脚本、MCP、环境或仿真问题建立可复现的诊断闭环 |
 | 工程实践 | [linux-vm-ssh-setup](./skills/engineering-practice/linux-vm-ssh-setup/SKILL.md) | 新 Linux 虚拟机网络、sudo、sshd、Windows SSH 密钥免密登录与 VS Code 连接配置 |
-| 工程实践 | [pytest-windows-sandbox-temp](./skills/pytest-windows-sandbox-temp/SKILL.md) | 处理受控 Windows sandbox 中 pytest 临时目录 ACL / WinError 5 问题；当前为 legacy 顶层路径 |
+| 工程实践 | [pytest-windows-sandbox-temp](./skills/engineering-practice/pytest-windows-sandbox-temp/SKILL.md) | 处理受控 Windows sandbox 中 pytest 临时目录 ACL / WinError 5 问题 |
 | 知识检索 | [rag-mcp-builder](./skills/knowledge/rag-mcp-builder/SKILL.md) | 从 HTML、文本、代码等知识库构建本地 ChromaDB + BM25 RAG MCP 服务 |
-| 文档处理 | [marker-pdf-to-md](./skills/document-processing/marker-pdf-to-md/SKILL.md) | 使用 Marker 将 PDF 转为 Markdown，并保留后续核验路径 |
-| 文档处理 | [pdf-to-markdown](./skills/document-processing/pdf-to-markdown/SKILL.md) | 批量将 PDF 转为 Markdown 文本 |
+| 文档处理 | [marker-pdf-to-md](./skills/document-processing/marker-pdf-to-md/SKILL.md) | 用 Marker（版面分析 + OCR）处理扫描件、公式、复杂版面 PDF，保留图片与元数据 |
+| 文档处理 | [pdf-to-markdown](./skills/document-processing/pdf-to-markdown/SKILL.md) | 默认 PDF 转 Markdown：用 pymupdf4llm 快速批量转换有文本层的 PDF |
 | 项目文档 | [ai-project-docs-structure](./skills/project-documentation/ai-project-docs-structure/SKILL.md) | 为 AI 辅助项目建立可维护的三层文档结构 |
 | 项目文档 | [sphinx-docs-site](./skills/project-documentation/sphinx-docs-site/SKILL.md) | 构建或维护 Sphinx 文档站点 |
 | 项目文档 | [writing-great-skills](./skills/project-documentation/writing-great-skills/SKILL.md) | 编写和维护可预测、低冗余 Agent Skills 的参考框架 |

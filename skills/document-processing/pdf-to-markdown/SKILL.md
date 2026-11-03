@@ -1,9 +1,11 @@
 ---
 name: pdf-to-markdown
 description: >-
-  Converts PDF files (datasheets, manuals, application notes, papers) to
-  AI-readable Markdown using pymupdf4llm. Preserves tables as pipe tables and
-  headings as Markdown headings. Use when asked to convert a PDF to Markdown,
+  Default PDF-to-Markdown path: converts digital (text-layer) PDFs such as
+  datasheets, manuals, application notes, and papers to AI-readable Markdown
+  using pymupdf4llm — fast, CPU-only, tables as pipe tables. For scanned PDFs,
+  OCR, formulas/complex layouts, extracted images, or when marker is named,
+  use marker-pdf-to-md instead. Use when asked to convert a PDF to Markdown,
   make a PDF easier for AI to read, extract content from a PDF for LLM
   consumption, or when the user mentions "PDF转MD"、"PDF转Markdown"、"把PDF转成文字"。
 ---

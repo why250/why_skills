@@ -59,7 +59,13 @@ def scalar(fm: str, key: str) -> str | None:
     return match.group(1).strip() if match else None
 
 
+FENCED_CODE = re.compile(r"(?ms)^[ \t]*(`{3,}|~{3,}).*?^[ \t]*\1[ \t]*$")
+
+
 def local_links(skill: Skill, text: str) -> list[str]:
+    # Links inside fenced code blocks are examples for other projects, not
+    # references this skill depends on.
+    text = FENCED_CODE.sub("", text)
     targets = re.findall(r"\[[^\]]*\]\(([^)]+)\)", text)
     missing: list[str] = []
     for target in targets:

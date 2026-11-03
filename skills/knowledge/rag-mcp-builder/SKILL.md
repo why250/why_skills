@@ -85,10 +85,10 @@ Chunk strategies:
 - `whole_file` — entire file = one chunk; best for small focused files (AEL functions, code examples)
 - `heading` — split at `##`/`###` Markdown headings; best for structured docs
 
-Optional: `child_chunk_size` — enables parent-child retrieval. Child chunks (~300 chars) are indexed for precise matching; parent chunks (`chunk_size` chars) are returned to the LLM for richer context. Omit to use standard single-level chunking. See [reference.md](reference.md) → Parent-Child Retrieval.
+Optional: `child_chunk_size` — enables parent-child retrieval. Child chunks (~300 chars) are indexed for precise matching; parent chunks (`chunk_size` chars) are returned to the LLM for richer context. Omit to use standard single-level chunking. See [reference.md](references/reference.md) → Parent-Child Retrieval.
 - `sliding` — not built-in; fall back to `heading` with a large `chunk_size`
 
-See [reference.md](reference.md) for full config options and chunk size guidance.
+See [reference.md](references/reference.md) for full config options and chunk size guidance.
 
 ### Step 3 — Copy templates to `mcp_server/`
 
@@ -180,4 +180,4 @@ Incremental update only re-embeds new/changed files (detected by mtime). BM25 is
 
 ## Additional resources
 
-- [reference.md](reference.md) — full config options, chunk strategies, category design tips, mcp.json patterns
+- [reference.md](references/reference.md) — full config options, chunk strategies, category design tips, mcp.json patterns
